@@ -175,8 +175,14 @@ class Tile(Base):
     owner = relationship("Nation", back_populates="tiles")
 
 # Setup Database
-db_path = os.path.join(os.path.dirname(__file__), '..', 'world_evolution.db')
-engine = create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})
+db_url = os.environ.get('DATABASE_URL')
+if db_url:
+    if db_url.startswith("postgres://"):
+        db_url = db_url.replace("postgres://", "postgresql://", 1)
+    engine = create_engine(db_url)
+else:
+    db_path = os.path.join(os.path.dirname(__file__), '..', 'world_evolution.db')
+    engine = create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})
 
 def init_db():
     Base.metadata.create_all(engine)
