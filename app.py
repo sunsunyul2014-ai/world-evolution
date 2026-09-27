@@ -694,8 +694,10 @@ def research_tech():
         db.close()
         return jsonify({"status": "fail: not enough resources"})
 
+# Start simulation loop in the background
+sim_thread = threading.Thread(target=game_loop, daemon=True)
+sim_thread.start()
+
 if __name__ == '__main__':
-    sim_thread = threading.Thread(target=game_loop, daemon=True)
-    sim_thread.start()
     socketio.run(app, debug=True, port=5000, host='0.0.0.0', use_reloader=False, allow_unsafe_werkzeug=True)
 
