@@ -364,16 +364,17 @@ def build():
                 '우주전함': {'composite': 500, 'warp_drive': 50, 'ai_chip': 100, 'energy_core': 200}
             }
             
-            # Terrain checks
-            if '농' in b_type and t.terrain_type != '평원':
-                db.close()
-                return jsonify({"status": "fail: 평원에만 건설할 수 있습니다."})
-            if '벌목장' in b_type and t.terrain_type != '숲':
-                db.close()
-                return jsonify({"status": "fail: 숲에만 건설할 수 있습니다."})
-            if '광산' in b_type and t.terrain_type != '산':
-                db.close()
-                return jsonify({"status": "fail: 산에만 건설할 수 있습니다."})
+            # Terrain checks (Only for buildings)
+            if not is_unit:
+                if '농' in b_type and t.terrain_type != '평원':
+                    db.close()
+                    return jsonify({"status": "fail: 평원에만 건설할 수 있습니다."})
+                if '벌목장' in b_type and t.terrain_type != '숲':
+                    db.close()
+                    return jsonify({"status": "fail: 숲에만 건설할 수 있습니다."})
+                if '광산' in b_type and t.terrain_type != '산':
+                    db.close()
+                    return jsonify({"status": "fail: 산에만 건설할 수 있습니다."})
                 
             if '연구소' in b_type and not player.tech_iron_smelting:
                 db.close()
