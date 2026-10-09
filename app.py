@@ -443,13 +443,10 @@ def build():
                 db.close()
                 return jsonify({"status": f"fail: {b_type}은(는) 중세 이상 시대에만 건설/징집할 수 있습니다."})
             
-            labor_req = max(1, tier * 2)  # Reduced from tier*10 to be more lenient
+            # 노동력 요구사항 제거 (유저 요청)
+            labor_req = 0
             time_req = tier * 2
             
-            if idle_pop < labor_req:
-                db.close()
-                return jsonify({"status": f"fail: 노동력이 부족합니다 (필요: {labor_req}, 잉여: {idle_pop})"})
-                
             p_city.working_population = (p_city.working_population or 0) + labor_req
             
             from modules.database import Task
