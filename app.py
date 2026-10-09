@@ -57,7 +57,7 @@ def game_loop():
         if world_changed:
             socketio.emit('world_update')
         db.close()
-        socketio.sleep(10) # 10 seconds per year
+        socketio.sleep(15) # 15 seconds per year
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
