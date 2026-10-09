@@ -197,7 +197,7 @@ def run_simulation_step(db: Session):
             city.working_population = city.population # Cap it if starved
             
         # Base production (wild gathering)
-        city.food_fruit += 10 * food_bonus * weather_food_mod
+        city.food_fruit += 40 * food_bonus * weather_food_mod
         
         # Building Production
         for b in city.buildings:

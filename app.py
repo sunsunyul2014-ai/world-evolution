@@ -464,10 +464,10 @@ def conquer():
         # Empty tile
         p_city = db.query(City).filter_by(nation_id=player.id).first()
         idle_pop = p_city.population - (p_city.working_population or 0) - (p_city.soldiers or 0)
-        labor_req = 10
+        labor_req = 0
         if idle_pop < labor_req:
             db.close()
-            return jsonify({"status": f"fail: 빈 땅 개척에 노동력이 부족합니다 (필요: 10, 잉여: {idle_pop})"})
+            return jsonify({"status": f"fail: 빈 땅 개척에 노동력이 부족합니다 (필요: 0, 잉여: {idle_pop})"})
             
         p_city.working_population = (p_city.working_population or 0) + labor_req
         from modules.database import Task
