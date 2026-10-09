@@ -435,7 +435,7 @@ def build():
 def conquer():
     if 'user_id' not in session: return jsonify({"status": "no session"})
     data = request.json
-    cx, cz = data.get('x'), data.get('z')
+    cx, cz = int(data.get('x')), int(data.get('z'))
     
     db = SessionLocal()
     player = db.query(Nation).filter_by(user_id=session['user_id']).first()
@@ -458,7 +458,7 @@ def conquer():
     
     if not adjacent:
         db.close()
-        return jsonify({"status": "fail: not adjacent"})
+        return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
         
     if target_tile.owner_id is None:
         # Empty tile
@@ -492,7 +492,7 @@ def conquer():
         return jsonify({"status": "success", "msg": "전쟁 선포! 전투 시작 (남은 턴: 3)"})
             
     db.close()
-    return jsonify({"status": "fail: already owned"})
+    return jsonify({"status": "fail: 이미 내 영토입니다."})
 
 @socketio.on('connect')
 def handle_connect():
