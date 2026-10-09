@@ -282,6 +282,13 @@ def build():
                 if existing_b:
                     db.close()
                     return jsonify({"status": "fail: 이미 해당 위치에 다른 건축물이 있습니다."})
+                
+                # Check if there is already an ongoing build task there
+                from modules.database import Task
+                existing_task = db.query(Task).filter_by(target_x=bx, target_z=bz, task_type='build').first()
+                if existing_task:
+                    db.close()
+                    return jsonify({"status": "fail: 이미 해당 위치에 건설이 진행 중입니다."})
             # Building Costs
             costs = {
                 '주택(1티어)': {'wood': 50},
