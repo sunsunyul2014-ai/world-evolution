@@ -483,9 +483,15 @@ def conquer():
         db.close()
         return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
         
+    state = db.query(GameState).first()
+    if player.last_conquer_year >= state.year:
+        db.close()
+        return jsonify({"status": "fail: 점령이나 전쟁은 1년에 한 번만 할 수 있습니다! 내년을 기약하세요."})
+        
     if target_tile.owner_id is None:
         # Empty tile - instant expansion
         target_tile.owner_id = player.id
+        player.last_conquer_year = state.year
         db.commit()
         db.close()
         return jsonify({"status": "success", "msg": "영토 점령이 즉시 완료되었습니다!"})
@@ -499,6 +505,7 @@ def conquer():
         p_city.soldiers -= 10 # Send soldiers to front (they act as assigned labor for war)
         from modules.database import Task
         new_task = Task(nation_id=player.id, city_id=p_city.id, task_type='conquer', target_x=cx, target_z=cz, labor_assigned=10, time_remaining=3)
+        player.last_conquer_year = state.year
         db.add(new_task)
         db.commit()
         db.close()

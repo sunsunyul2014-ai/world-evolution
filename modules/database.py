@@ -42,6 +42,7 @@ class Nation(Base):
     
     # Diplomacy: list of nation IDs currently at war with
     at_war_with = Column(JSON, default=list)
+    last_conquer_year = Column(Integer, default=0)
     
     user = relationship("User", back_populates="nation")
     cities = relationship("City", back_populates="nation")
