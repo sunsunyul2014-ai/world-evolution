@@ -510,6 +510,18 @@ def reset_year():
     db.close()
     return jsonify({"status": "success", "msg": "Year reset to 1 (고대)!"})
 
+@app.route('/api/hard_reset')
+def hard_reset():
+    # 완전히 데이터베이스를 삭제하고 세계를 다시 생성합니다.
+    from modules.database import Base, engine
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    from modules.world_gen import create_world
+    create_world(50)
+    # 세션 무효화
+    session.clear()
+    return jsonify({"status": "success", "msg": "모든 데이터가 초기화되었습니다! 새로고침 해주세요."})
+
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")

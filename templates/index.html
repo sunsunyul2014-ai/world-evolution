@@ -26,6 +26,7 @@
         <div id="top-bar">
             <button onclick="window.location.href='/logout'" style="background: #ef4444; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px;">로그아웃</button>
             <button onclick="fetch('/api/reset_year').then(()=>alert('초기화 완료! 새로고침 해주세요.'));" style="background: #facc15; border: none; color: black; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px;">년도 초기화</button>
+            <button onclick="if(confirm('정말 지도를 포함한 모든 데이터를 완전 초기화 하시겠습니까?')) fetch('/api/hard_reset').then(()=>window.location.reload());" style="background: #7f1d1d; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-left: 10px;">전체 완전 초기화</button>
             <div class="time-display" style="color: #4ade80;">시대: <span id="game-era">고대</span></div>
             <div id="nation-badge" style="padding: 5px 15px; border-radius: 8px; font-weight: bold; margin-right: 15px; border: 2px solid white; cursor: pointer;" title="클릭하여 내 수도로 이동">내 국가</div>
             <button id="btn-find-nation" style="margin-right: 15px; background: #3b82f6; border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">🎯 내 나라 찾기</button>
