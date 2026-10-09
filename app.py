@@ -503,11 +503,11 @@ def conquer():
     elif target_tile.owner_id != player.id:
         # Enemy tile -> Combat Task
         p_city = db.query(City).filter_by(nation_id=player.id).first()
-        if p_city.soldiers < 10:
+        if (p_city.soldiers or 0) < 10:
             db.close()
             return jsonify({"status": "fail: 병력이 부족하여 전쟁을 선포할 수 없습니다 (최소 10명 필요)"})
             
-        p_city.soldiers -= 10 # Send soldiers to front (they act as assigned labor for war)
+        p_city.soldiers = (p_city.soldiers or 0) - 10 # Send soldiers to front (they act as assigned labor for war)
         from modules.database import Task
         new_task = Task(nation_id=player.id, city_id=p_city.id, task_type='conquer', target_x=cx, target_z=cz, labor_assigned=10, time_remaining=3)
         player.last_conquer_year = state.year
