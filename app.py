@@ -407,10 +407,25 @@ def build():
             
             # Determine tier and labor
             tier = 1
-            if '5티어' in b_type or b_type in ['강화외골격병', '플라즈마전차', '전투로봇', '우주전함']: tier = 5
+            if '5티어' in b_type or b_type in ['강화외골격병', '플라즈마전차', '전투로봇', '우주전함', '행성파괴함', '우주항공모함']: tier = 5
             elif '4티어' in b_type or b_type in ['소총수', '탱크', '헬기', '비행기', '항공모함', '함포']: tier = 4
             elif '3티어' in b_type or b_type in ['머스킷병', '대포']: tier = 3
             elif '2티어' in b_type or b_type in ['기사', '장궁병', '투석기']: tier = 2
+            
+            state = db.query(GameState).first()
+            era = state.era
+            if tier == 5 and era != "미래":
+                db.close()
+                return jsonify({"status": f"fail: {b_type}은(는) 미래 시대에만 건설/징집할 수 있습니다."})
+            if tier == 4 and era not in ["현대", "미래"]:
+                db.close()
+                return jsonify({"status": f"fail: {b_type}은(는) 현대 이상 시대에만 건설/징집할 수 있습니다."})
+            if tier == 3 and era not in ["근대", "현대", "미래"]:
+                db.close()
+                return jsonify({"status": f"fail: {b_type}은(는) 근대 이상 시대에만 건설/징집할 수 있습니다."})
+            if tier == 2 and era not in ["중세", "근대", "현대", "미래"]:
+                db.close()
+                return jsonify({"status": f"fail: {b_type}은(는) 중세 이상 시대에만 건설/징집할 수 있습니다."})
             
             labor_req = max(1, tier * 2)  # Reduced from tier*10 to be more lenient
             time_req = tier * 2

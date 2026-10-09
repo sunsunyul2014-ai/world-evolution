@@ -98,12 +98,17 @@ def run_simulation_step(db: Session):
     nations = db.query(Nation).all()
     active_nations_count = len(nations)
     
-    # Era Progression & Map Expansion (Conquest Victory on current map)
-    if active_nations_count == 1:
-        current_era_idx = ERAS.index(state.era) if state.era in ERAS else 0
-        if current_era_idx < len(ERAS) - 1:
-            state.era = ERAS[current_era_idx + 1]
-            expand_world(db, state) # This adds a new AI nation, so active_nations_count will increase
+    # Era Progression based on time
+    old_era = state.era
+    if state.year >= 150: state.era = "미래"
+    elif state.year >= 100: state.era = "현대"
+    elif state.year >= 60: state.era = "근대"
+    elif state.year >= 30: state.era = "중세"
+    else: state.era = "고대"
+    
+    if old_era != state.era:
+        # Era changed, expand the world to add a new AI nation as a fun mechanic
+        expand_world(db, state)
     
     # Weather System
     if state.year % 5 == 0:
