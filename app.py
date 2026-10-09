@@ -22,13 +22,13 @@ def game_loop():
         player_exists = db.query(Nation).filter_by(is_player=True).first()
         if not player_exists:
             db.close()
-            time.sleep(2)
+            socketio.sleep(2)
             continue
             
         state_res = run_simulation_step(db)
         if not state_res:
             db.close()
-            time.sleep(5)
+            socketio.sleep(5)
             continue
             
         state, world_changed = state_res
@@ -57,7 +57,7 @@ def game_loop():
         if world_changed:
             socketio.emit('world_update')
         db.close()
-        time.sleep(10) # 10 seconds per year
+        socketio.sleep(10) # 10 seconds per year
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -700,8 +700,15 @@ def research_tech():
         return jsonify({"status": "fail: not enough resources"})
 
 # Start simulation loop in the background
-sim_thread = threading.Thread(target=game_loop, daemon=True)
-sim_thread.start()
+background_thread = None
+thread_lock = threading.Lock()
+
+@socketio.on('connect')
+def handle_connect():
+    global background_thread
+    with thread_lock:
+        if background_thread is None:
+            background_thread = socketio.start_background_task(game_loop)
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, port=5000, host='0.0.0.0', use_reloader=False, allow_unsafe_werkzeug=True)
