@@ -461,21 +461,11 @@ def conquer():
         return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
         
     if target_tile.owner_id is None:
-        # Empty tile
-        p_city = db.query(City).filter_by(nation_id=player.id).first()
-        idle_pop = p_city.population - (p_city.working_population or 0) - (p_city.soldiers or 0)
-        labor_req = 0
-        if idle_pop < labor_req:
-            db.close()
-            return jsonify({"status": f"fail: 빈 땅 개척에 노동력이 부족합니다 (필요: 0, 잉여: {idle_pop})"})
-            
-        p_city.working_population = (p_city.working_population or 0) + labor_req
-        from modules.database import Task
-        new_task = Task(nation_id=player.id, city_id=p_city.id, task_type='expand', target_x=cx, target_z=cz, labor_assigned=labor_req, time_remaining=1)
-        db.add(new_task)
+        # Empty tile - instant expansion
+        target_tile.owner_id = player.id
         db.commit()
         db.close()
-        return jsonify({"status": "success", "msg": "영토 개척 시작 (남은 턴: 1)"})
+        return jsonify({"status": "success", "msg": "영토 점령이 즉시 완료되었습니다!"})
     elif target_tile.owner_id != player.id:
         # Enemy tile -> Combat Task
         p_city = db.query(City).filter_by(nation_id=player.id).first()
