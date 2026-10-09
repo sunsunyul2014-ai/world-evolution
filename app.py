@@ -487,7 +487,7 @@ def conquer():
         Tile.z.between(cz-1, cz+1)
     ).first()
     
-    if not adjacent:
+    if not adjacent and target_tile.owner_id is None:
         db.close()
         return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
         
