@@ -611,6 +611,7 @@ function generateTerrain() {
                     mtn.receiveShadow = true;
                     mtn.matrixAutoUpdate = false;
                     mtn.updateMatrix();
+                    mtn.userData = { type: t.type, x: t.x, z: t.z, res_type: t.res_type, res_amt: t.res_amt, owner: t.owner_color };
                     scene.add(mtn);
                     tiles.push(mtn);
                     // Add small peak
@@ -620,6 +621,7 @@ function generateTerrain() {
                     peak.castShadow = true;
                     peak.matrixAutoUpdate = false;
                     peak.updateMatrix();
+                    peak.userData = { type: t.type, x: t.x, z: t.z, res_type: t.res_type, res_amt: t.res_amt, owner: t.owner_color };
                     scene.add(peak);
                     tiles.push(peak);
                 }
