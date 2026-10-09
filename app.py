@@ -499,6 +499,17 @@ def conquer():
     db.close()
     return jsonify({"status": "fail: 이미 내 영토입니다."})
 
+@app.route('/api/reset_year')
+def reset_year():
+    db = SessionLocal()
+    state = db.query(GameState).first()
+    if state:
+        state.year = 1
+        state.era = "고대"
+        db.commit()
+    db.close()
+    return jsonify({"status": "success", "msg": "Year reset to 1 (고대)!"})
+
 @socketio.on('connect')
 def handle_connect():
     print("Client connected")
