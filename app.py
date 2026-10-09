@@ -12,6 +12,14 @@ app = Flask(__name__)
 app.secret_key = 'world_evolution_super_secret'
 socketio = SocketIO(app, cors_allowed_origins="*", manage_session=True)
 
+if not os.path.exists('force_reset_done_v2.txt'):
+    print("Forcing full database reset on startup...")
+    from modules.database import Base, engine
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    with open('force_reset_done_v2.txt', 'w') as f:
+        f.write('done')
+
 create_world(50)
 
 def game_loop():
