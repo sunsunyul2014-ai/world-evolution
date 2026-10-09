@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokemon Defense: Advanced</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Login/Register Overlay -->
+    <div id="login-overlay" class="overlay">
+        <div class="modal">
+            <h2>로그인 및 회원가입</h2>
+            <p>이름과 비밀번호를 입력하세요. 이름이 없으면 자동으로 가입됩니다.</p>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+                <input type="text" id="login-id" placeholder="이름 (ID)" style="padding: 10px; border-radius: 5px; border: 1px solid #475569; background: #1e293b; color: white;">
+                <input type="password" id="login-pw" placeholder="비밀번호" style="padding: 10px; border-radius: 5px; border: 1px solid #475569; background: #1e293b; color: white;">
+            </div>
+            <div id="login-error" style="display:none; color:#f87171; font-size:0.9rem; background:rgba(239,68,68,0.15); border:1px solid #f87171; border-radius:6px; padding:8px 12px; margin-bottom:8px;"></div>
+            <div class="modal-btns">
+                <button id="btn-login" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">로그인 / 시작</button>
+            </div>
+            <div style="margin-top: 12px; text-align: center;">
+                <button id="btn-reset-account" style="background: transparent; border: none; color: #94a3b8; font-size: 0.8rem; cursor: pointer; text-decoration: underline;">비밀번호를 잊어버렸나요? (계정 초기화)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div id="tutorial-overlay" class="overlay" style="display: none;">
+        <div class="modal">
+            <h2>환영합니다!</h2>
+            <p>새로운 시스템이 도입된 포켓몬 디펜스의 튜토리얼을 진행하시겠습니까?</p>
+            <div class="modal-btns">
+                <button id="btn-tut-yes">네, 튜토리얼 보기</button>
+                <button id="btn-tut-no" class="secondary">아니오, 바로 시작</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="victory-overlay" class="overlay" style="display: none;">
+        <div class="modal" style="border-color: #4ade80;">
+            <h2 style="color: #4ade80;">VICTORY! 🎉</h2>
+            <p>20 웨이브를 모두 막아냈습니다!<br>포켓몬 디펜스 마스터가 되셨습니다.</p>
+            <div class="modal-btns">
+                <button onclick="location.reload()" style="background: linear-gradient(135deg, #22c55e, #16a34a);">다시 하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="game-over-overlay" class="overlay" style="display: none;">
+        <div class="modal" style="border-color: #ef4444;">
+            <h2 style="color: #ef4444;">GAME OVER</h2>
+            <p>모든 체력을 소진했습니다.</p>
+            <div class="modal-btns">
+                <button id="btn-restart-game" style="background: #ef4444; border: none; color: white;">다시 시작하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Encyclopedia Overlay -->
+    <div id="encyclopedia-overlay" class="overlay" style="display: none; align-items: flex-start; padding-top: 50px;">
+        <div class="modal" style="width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto; text-align: left; position: relative;">
+            <button id="btn-close-enc" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer;">❌</button>
+            <h2 style="text-align: center; margin-bottom: 20px;">📖 디펜스 종합 도감</h2>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px; justify-content: center;">
+                <button id="tab-towers" style="padding: 8px 16px; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">아군 (포켓몬 타워)</button>
+                <button id="tab-enemies" style="padding: 8px 16px; background: #334155; color: #cbd5e1; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">적 (야생 포켓몬)</button>
+                <button id="tab-status" style="padding: 8px 16px; background: #334155; color: #cbd5e1; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">상태이상 효과</button>
+            </div>
+            
+            <div id="enc-towers-content" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                <!-- JS로 렌더링 -->
+            </div>
+            <div id="enc-enemies-content" style="display: none; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                <!-- JS로 렌더링 -->
+            </div>
+            <div id="enc-status-content" style="display: none; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #ef4444;">
+                    <h4 style="color: #ef4444; margin: 0 0 5px 0;">🔥 화상 (Burn)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">5초 동안 매 0.5초마다 지속 피해를 입힙니다. 기지 공격 시 데미지가 반감됩니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #3b82f6;">
+                    <h4 style="color: #3b82f6; margin: 0 0 5px 0;">💧 둔화 (Slow)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">일정 시간 동안 적의 이동 속도가 감소합니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #facc15;">
+                    <h4 style="color: #facc15; margin: 0 0 5px 0;">⚡ 마비 (Paralyze)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">이동 속도가 50% 감소하며, 1초마다 12% 확률로 2초간 멈춥니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #a855f7;">
+                    <h4 style="color: #a855f7; margin: 0 0 5px 0;">☠️ 맹독 (Poison)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">5초 동안 매 0.5초마다 아주 강력한 지속 피해를 입힙니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #38bdf8;">
+                    <h4 style="color: #38bdf8; margin: 0 0 5px 0;">❄️ 얼음 (Freeze)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">적이 완전히 멈춥니다. 1초마다 20% 확률로 얼음이 깨지며 해제됩니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #93c5fd;">
+                    <h4 style="color: #93c5fd; margin: 0 0 5px 0;">💤 수면 (Sleep)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">야생 포켓몬이 아군 타워를 잠재워 일정 시간 공격하지 못하게 합니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #f87171;">
+                    <h4 style="color: #f87171; margin: 0 0 5px 0;">🥱 하품 (Yawn)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">야생 포켓몬이 주변 타워에게 하품을 걸어 서서히 잠들게 합니다 (10초 뒤 3.5초 수면).</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #facc15;">
+                    <h4 style="color: #facc15; margin: 0 0 5px 0;">😵 기절 (Stun)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">돌에 맞거나 폭발에 휘말린 타워가 일시적으로 행동 불능(공격 불가) 상태가 됩니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #b45309;">
+                    <h4 style="color: #b45309; margin: 0 0 5px 0;">🌪️ 모래지옥 (Sand Tomb)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">보스의 모래지옥 범위 내에 있는 타워들은 지속적으로 공격이 불가능해집니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #64748b;">
+                    <h4 style="color: #64748b; margin: 0 0 5px 0;">⚙️ 톱니바퀴 시너지 (Gear Synergy)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">현재 맵 위에 생존해 있는 기어르 계열(기어르, 기기어르, 기기기어르)이 많을수록 이들의 이동 속도가 비례하여 빨라지며, 타워에게 받는 피해량도 대폭 감소합니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #a855f7;">
+                    <h4 style="color: #a855f7; margin: 0 0 5px 0;">💫 혼란 (Confusion)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">몬스터가 혼란 상태에 빠져, 이동하면서 지속적으로 자해 피해를 입습니다. 몬스터의 색상이 기괴하게 변형됩니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #ef4444;">
+                    <h4 style="color: #ef4444; margin: 0 0 5px 0;">👿 위협 (Intimidate)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">전방위 적들의 공격력을 영구적으로 하락시킵니다. (최대 75% 중첩 가능)</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #22c55e;">
+                    <h4 style="color: #22c55e; margin: 0 0 5px 0;">🚫 회복 봉인 (Heal Block)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">적 몬스터가 피격 시 체력을 회복하는 능력을 일시적으로 봉인합니다.</p>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; border-left: 5px solid #3b82f6;">
+                    <h4 style="color: #3b82f6; margin: 0 0 5px 0;">📉 공격력 하락 오라 (Weaken Aura)</h4>
+                    <p style="margin: 0; font-size: 0.85rem; color: #cbd5e1;">물거미 계열 몬스터 주변에 있으면 아군 타워의 데미지가 일정 비율(20%) 하락합니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Overlay -->
+    <div id="shop-overlay" class="overlay" style="display: none; align-items: center; justify-content: center;">
+        <div class="modal" style="width: 90%; max-width: 600px; border: 2px solid #22c55e; background: #0f172a; box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);">
+            <button id="btn-close-shop" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer;">❌</button>
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 15px;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/352.png" alt="Kecleon" style="width: 80px; height: 80px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                <div>
+                    <h2 style="color: #4ade80; margin: 0; font-size: 1.8rem;">켈리몬 상점</h2>
+                    <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 0.9rem;">필요한 도구를 구매하세요! 재고는 바로바로 들어옵니다.</p>
+                </div>
+            </div>
+
+            <div id="shop-items-container" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                <!-- JS로 렌더링 됨 -->
+            </div>
+            
+            <div style="text-align: right; color: #cbd5e1; font-weight: bold; font-size: 1.1rem;">
+                보유 열매: <span id="shop-berries-display" style="color: #fbbf24;">0</span> 🍒
+            </div>
+        </div>
+    </div>
+
+    <!-- Snorlax's Shop Overlay -->
+    <div id="snorlax-shop-overlay" class="overlay" style="display: none; align-items: center; justify-content: center; z-index: 105;">
+        <div class="modal" style="width: 95%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; border: 2px solid #0ea5e9; background: #0f172a; box-shadow: 0 0 30px rgba(14, 165, 233, 0.4); padding: 20px;">
+            <button id="btn-close-snorlax-shop" style="position: absolute; top: 15px; right: 15px; background: transparent; border: none; font-size: 1.5rem; cursor: pointer;">❌</button>
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 15px; flex-shrink: 0;">
+                <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/143.png" alt="Snorlax" style="width: 100px; height: 100px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
+                <div style="text-align: left;">
+                    <h2 style="color: #38bdf8; margin: 0; font-size: 2rem;">잠만보의 상점</h2>
+                    <p style="color: #94a3b8; margin: 5px 0 0 0; font-size: 1rem;">라운드를 클리어하고 얻은 <b>포핀</b> <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lumiose-galette.png" alt="poffin" style="width: 24px; vertical-align: middle;"> 으로 영구적인 업그레이드를 하세요!</p>
+                </div>
+            </div>
+
+            <div style="text-align: right; color: #e2e8f0; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px; flex-shrink: 0;">
+                내 포핀: <span id="snorlax-poffins-display" style="color: #c084fc; font-size: 1.5rem;">0</span> <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lumiose-galette.png" alt="poffin" style="width: 24px; vertical-align: middle;">
+            </div>
+
+            <!-- Upgrades Container -->
+            <div id="snorlax-upgrades-container" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 15px; padding-right: 10px;">
+                <!-- JS로 렌더링 됨 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 날씨 UI -->
+    <div id="weather-ui" style="position: absolute; top: 20px; right: 20px; background: rgba(15,23,42,0.8); border: 2px solid #334155; padding: 15px; border-radius: 10px; color: white; display: flex; flex-direction: column; gap: 10px; z-index: 10; pointer-events: none; min-width: 150px;">
+        <div style="font-weight: bold; font-size: 1.1rem; text-align: center; margin-bottom: 5px; color: white;">현재 날씨</div>
+        <div style="display: flex; justify-content: space-between; gap: 20px; color: #facc15;">
+            <span>☀️ 쾌청</span>
+            <span id="weather-sun-val" style="font-weight: bold;">0</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 20px; color: #60a5fa;">
+            <span>🌧️ 잔비</span>
+            <span id="weather-rain-val" style="font-weight: bold;">0</span>
+        </div>
+        <div id="weather-status" style="margin-top: 10px; font-size: 0.8rem; text-align: center; color: #94a3b8;">맑음 (효과 없음)</div>
+    </div>
+
+    <div id="game-container">
+        <div id="ui-panel" style="height: calc(100vh - 60px); display: flex; flex-direction: column; overflow: hidden; padding-right: 5px;">
+            <h1>Poke Defense</h1>
+            <div class="stats">
+                <p>❤️ 체력: <span id="lives">500</span></p>
+                <p><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/oran-berry.png" alt="Berry" class="berry-icon"> 열매: <span id="berries">100</span></p>
+                <p><img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/lumiose-galette.png" alt="Poffin" class="berry-icon"> 포핀: <span id="poffins" style="color: #c084fc; font-weight: bold;">0</span></p>
+                <p>🌊 웨이브: <span id="wave">1</span> / 20</p>
+            </div>
+
+            <!-- User Status Bar -->
+            <div id="user-status-bar" style="position: absolute; top: 10px; right: 20px; display: none; gap: 10px; align-items: center; z-index: 50; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px;">
+                <span id="user-name-display" style="color: #60a5fa; font-weight: bold;">User</span>
+                <button id="btn-speed-toggle" style="background: #f59e0b; border: none; padding: 5px 10px; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8rem; font-weight: bold;">▶ 1배속</button>
+                <button id="btn-save-game" style="background: #22c55e; border: none; padding: 5px 10px; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8rem; font-weight: bold;">저장</button>
+                <button id="btn-logout" style="background: #ef4444; border: none; padding: 5px 10px; border-radius: 5px; color: white; cursor: pointer; font-size: 0.8rem; font-weight: bold;">로그아웃</button>
+            </div>
+
+            <div id="top-buttons-container">
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button id="btn-open-enc" style="flex: 1; background: linear-gradient(135deg, #8b5cf6, #6d28d9); border-color: #a78bfa; font-size: 0.9rem;">📖 도감</button>
+                    <button id="btn-open-shop" style="flex: 1; background: linear-gradient(135deg, #22c55e, #16a34a); border-color: #4ade80; font-size: 0.9rem;">🏪 상점</button>
+                </div>
+                <div style="display: flex; gap: 5px; margin-top: 5px;">
+                    <button id="btn-open-snorlax-shop" style="flex: 1; background: linear-gradient(135deg, #0ea5e9, #0369a1); border-color: #38bdf8; font-size: 0.9rem;">💤 잠만보 상점</button>
+                    <button id="btn-open-raid" style="flex: 1; background: linear-gradient(135deg, #9333ea, #4c1d95); border-color: #c084fc; font-size: 0.9rem; font-weight: bold;">⚔️ 레이드</button>
+                </div>
+                <button id="btn-start-wave" style="margin-top: 5px; width: 100%;">웨이브 시작!</button>
+            </div>
+            
+            <div id="build-menu" class="controls" style="flex: 1; min-height: 150px; overflow-y: auto;">
+                <p class="instruction" style="position: sticky; top: 0; background: #1e293b; padding-bottom: 5px; z-index: 1;">타워를 선택하고 배치하세요!</p>
+                <button class="tower-btn active" data-type="charmander">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png" class="btn-sprite">
+                    파이리 (50)
+                </button>
+                <button class="tower-btn" data-type="squirtle">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/7.png" class="btn-sprite">
+                    꼬부기 (50)
+                </button>
+                <button class="tower-btn" data-type="bulbasaur">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png" class="btn-sprite">
+                    이상해씨 (50)
+                </button>
+                <button class="tower-btn" data-type="pikachu">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png" class="btn-sprite">
+                    피카츄 (100)
+                </button>
+                <button class="tower-btn" data-type="eevee">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/133.png" class="btn-sprite">
+                    이브이 (100)
+                </button>
+                <button class="tower-btn" data-type="gastly">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/92.png" class="btn-sprite">
+                    고오스 (80)
+                </button>
+                <button class="tower-btn" data-type="abra">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/63.png" class="btn-sprite">
+                    케이시 (60)
+                </button>
+                <button class="tower-btn" data-type="magnemite">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/81.png" class="btn-sprite">
+                    코일 (180)
+                </button>
+                <button class="tower-btn" data-type="riolu">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/447.png" class="btn-sprite">
+                    리오르 (90)
+                </button>
+                <button class="tower-btn" data-type="smoochum">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/238.png" class="btn-sprite">
+                    뽀뽀라 (70)
+                </button>
+                <button class="tower-btn" data-type="froakie">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/656.png" class="btn-sprite">
+                    개구마르 (70)
+                </button>
+                <button class="tower-btn" data-type="sigilyph">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/561.png" class="btn-sprite">
+                    심보러 (250)
+                </button>
+                <button class="tower-btn" data-type="litten">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/725.png" class="btn-sprite">
+                    냐오불 (50)
+                </button>
+                <button class="tower-btn" data-type="popplio">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/728.png" class="btn-sprite">
+                    누리공 (50)
+                </button>
+                <button class="tower-btn" data-type="rowlet">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/722.png" class="btn-sprite">
+                    나몰빼미 (50)
+                </button>
+                <button class="tower-btn" data-type="vulpix">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/37.png" class="btn-sprite">
+                    식스테일 (150)
+                </button>
+                <button class="tower-btn" data-type="torkoal">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/324.png" class="btn-sprite">
+                    코터스 (300)
+                </button>
+                <button class="tower-btn" data-type="wingull">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/278.png" class="btn-sprite">
+                    갈모매 (150)
+                </button>
+                <button class="tower-btn" data-type="poliwag">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/60.png" class="btn-sprite">
+                    발챙이 (150)
+                </button>
+
+                <button id="btn-build-typenull" class="tower-btn" data-type="type_null" style="display: none; background: linear-gradient(135deg, #a855f7, #6b21a8); border-color: #a855f7;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/772.png" class="btn-sprite">
+                    타입:널 (0)
+                </button>
+                <button id="btn-build-zeraora" class="tower-btn" data-type="zeraora" style="display: none; background: linear-gradient(135deg, #facc15, #f59e0b); border-color: #facc15;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/807.png" class="btn-sprite">
+                    제라오라 (0)
+                </button>
+                <button id="btn-build-groudon" class="tower-btn" data-type="groudon" style="display: none; background: linear-gradient(135deg, #ef4444, #b91c1c); border-color: #f87171;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/383.png" class="btn-sprite">
+                    그란돈 (0)
+                </button>
+                <button id="btn-build-kyogre" class="tower-btn" data-type="kyogre" style="display: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border-color: #60a5fa;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/382.png" class="btn-sprite">
+                    가이오가 (0)
+                </button>
+                <button id="btn-build-lugia" class="tower-btn" data-type="lugia" style="display: none; background: linear-gradient(135deg, #bfdbfe, #60a5fa); border-color: #93c5fd;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/249.png" class="btn-sprite">
+                    루기아 (0)
+                </button>
+            </div>
+
+            <div id="upgrade-menu" class="controls" style="display: none; flex: 1; min-height: 150px; overflow-y: auto;">
+                <h3 id="upg-name">파이리 Lv.1</h3>
+                <img id="upg-img" src="" alt="" style="width: 80px; height: 80px; align-self: center; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));">
+                <p class="instruction" id="upg-desc" style="color: #cbd5e1; margin-bottom:10px;">단일 대상 공격</p>
+                
+                <div id="upg-stats" style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 10px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; line-height: 1.5; text-align: left;">
+                    ⚔️ 공격력: <span id="stat-dmg" style="color: #f87171;">0</span><br>
+                    🎯 사거리: <span id="stat-range" style="color: #60a5fa;">0</span><br>
+                    ⏱️ 쿨타임: <span id="stat-cd" style="color: #34d399;">0</span>초
+                </div>
+                
+                <button id="btn-upgrade">강화 (비용: 10)</button>
+                <div id="evolve-container" style="display: flex; flex-direction: column; gap: 5px; width: 100%;"></div>
+                <button id="btn-sell" style="background: linear-gradient(135deg, #ef4444, #b91c1c); border-color: #f87171; margin-top: 5px;">철거 (반환: 25)</button>
+                <button id="btn-close-upgrade" class="secondary" style="margin-top:auto;">뒤로 가기</button>
+            </div>
+            
+            <div id="inventory-panel" class="controls" style="margin-top: 15px; padding: 10px; flex: 1; min-height: 150px; overflow-y: auto; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 1rem;">🎁 내 인벤토리</h3>
+                    <button id="btn-cancel-item" style="display: none; background: #ef4444; border: none; padding: 4px 10px; font-size: 0.8rem; border-radius: 4px; color: white; cursor: pointer; font-weight: bold;">취소</button>
+                </div>
+                <div id="inv-slots" style="display: flex; gap: 8px; flex-wrap: wrap; flex: 1; overflow-y: auto;">
+                    <!-- JS로 렌더링 -->
+                    <p style="color: #64748b; font-size: 0.8rem; margin: 0;">가방이 비어있습니다.</p>
+                </div>
+            </div>
+
+            <!-- 레이드 모달 추가 -->
+            <div id="raid-menu" class="controls" style="display: none; position: absolute; z-index: 100; left: 20px; top: 100px; max-width: 300px; max-height: 400px; overflow-y: auto; border: 2px solid #a855f7; box-shadow: 0 10px 25px rgba(0,0,0,0.8);">
+                <h2 style="color: #c084fc; text-align: center; margin-bottom: 15px;">⚔️ 전설 레이드</h2>
+                <button id="btn-close-raid" class="secondary" style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; padding: 0;">X</button>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <button id="btn-prev-raid" class="secondary" style="padding: 5px 10px; border-radius: 5px;">◀</button>
+                    <span id="raid-boss-indicator" style="color: #cbd5e1; font-size: 0.9rem;">1 / 2</span>
+                    <button id="btn-next-raid" class="secondary" style="padding: 5px 10px; border-radius: 5px;">▶</button>
+                </div>
+
+                <div id="raid-boss-container" style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; text-align: center;">
+                    <img id="raid-boss-img" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/772.png" style="width: 80px; height: 80px; filter: drop-shadow(0 0 5px #c084fc);">
+                    <h3 id="raid-boss-name" style="margin: 5px 0;">타입:널 (비용: 555)</h3>
+                    <p id="raid-boss-desc" style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 10px;">스턴/상태이상 면역의 강력한 보스! 처치 시 아군으로 합류합니다.</p>
+                    <button id="btn-start-raid" style="background: linear-gradient(135deg, #9333ea, #4c1d95); border-color: #c084fc; width: 100%;">도전하기</button>
+                </div>
+            </div>
+
+        </div>
+        
+        <div id="canvas-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <!-- Tutorial Tooltips -->
+            <div id="tut-tooltip" class="tooltip" style="display: none;">
+                <p id="tut-text">여기를 클릭하세요</p>
+                <div style="text-align: right;">
+                    <button id="btn-tut-next" style="display: inline-block; padding: 5px 10px; font-size:0.9rem;">다음</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="game_v5.js"></script>
+</body>
+</html>
