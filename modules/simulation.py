@@ -100,10 +100,10 @@ def run_simulation_step(db: Session):
     
     # Era Progression based on time
     old_era = state.era
-    if state.year >= 150: state.era = "미래"
-    elif state.year >= 100: state.era = "현대"
-    elif state.year >= 60: state.era = "근대"
-    elif state.year >= 30: state.era = "중세"
+    if state.year >= 1200: state.era = "미래"
+    elif state.year >= 900: state.era = "현대"
+    elif state.year >= 600: state.era = "근대"
+    elif state.year >= 300: state.era = "중세"
     else: state.era = "고대"
     
     if old_era != state.era:
