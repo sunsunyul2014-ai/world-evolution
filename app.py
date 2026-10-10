@@ -389,12 +389,13 @@ def build():
             cost = costs.get(b_type, {'wood': 10, 'stone': 10})
             
             missing = []
+            food_list = ['food_wheat', 'food_rice', 'food_corn', 'food_potato', 'food_fruit', 'food_beef', 'food_pork', 'food_chicken', 'food_fish', 'food_milk', 'food_cheese', 'food_bread', 'food_sausage', 'food_wine', 'food_steak', 'food_canned_fish', 'food_stew']
             for k, v in cost.items():
                 if k == 'gold':
                     if (player.gold or 0) < v: missing.append(f"금(필요:{v})")
                 else:
                     if k == 'food':
-                        val = getattr(p_city, 'food_wheat', 0) or 0
+                        val = sum(getattr(p_city, f, 0) or 0 for f in food_list)
                     else:
                         val = getattr(p_city, k, 0) or 0
                     if val < v: missing.append(f"{k}(필요:{v})")
@@ -409,7 +410,15 @@ def build():
                     player.gold = (player.gold or 0) - v
                 else:
                     if k == 'food':
-                        p_city.food_wheat = (p_city.food_wheat or 0) - v
+                        remaining_cost = v
+                        for f in food_list:
+                            avail = getattr(p_city, f, 0) or 0
+                            if avail > 0:
+                                take = min(avail, remaining_cost)
+                                setattr(p_city, f, avail - take)
+                                remaining_cost -= take
+                                if remaining_cost <= 0:
+                                    break
                     else:
                         setattr(p_city, k, (getattr(p_city, k, 0) or 0) - v)
             
