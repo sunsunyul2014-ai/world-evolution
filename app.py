@@ -477,44 +477,66 @@ def conquer():
         db.close()
         return jsonify({"status": "fail"})
         
-    # Check adjacency
+    # 1. 겉에 있는 땅(인접) 여부 확인
     adjacent = db.query(Tile).filter(
         Tile.owner_id == player.id,
         Tile.x.between(cx-1, cx+1),
         Tile.z.between(cz-1, cz+1)
     ).first()
     
-    if not adjacent and target_tile.owner_id is None:
-        db.close()
-        return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
-        
     state = db.query(GameState).first()
-    if player.last_conquer_year >= state.year:
-        db.close()
-        return jsonify({"status": "fail: 점령이나 전쟁은 1년에 한 번만 할 수 있습니다! 내년을 기약하세요."})
-        
+    
+    # 2. 안에 있는 땅 검사 (주변 4칸이 모두 타겟 타일의 소유자와 같은지)
+    if target_tile.owner_id is not None and target_tile.owner_id != player.id:
+        neighbors = db.query(Tile).filter(
+            ( (Tile.x == cx) & (Tile.z == cz-1) ) |
+            ( (Tile.x == cx) & (Tile.z == cz+1) ) |
+            ( (Tile.x == cx-1) & (Tile.z == cz) ) |
+            ( (Tile.x == cx+1) & (Tile.z == cz) )
+        ).all()
+        # 맵의 가장자리 등 주변 타일이 부족할 수 있지만 존재하는 모든 이웃 타일 기준
+        if len(neighbors) > 0 and all(n.owner_id == target_tile.owner_id for n in neighbors):
+            db.close()
+            return jsonify({"status": "fail: 적의 영토로 완전히 둘러싸인 안쪽 땅은 공격할 수 없습니다."})
+
     if target_tile.owner_id is None:
-        # Empty tile - instant expansion
+        # 빈 땅 점령
+        if not adjacent:
+            db.close()
+            return jsonify({"status": "fail: 내 영토와 인접한 타일만 점령할 수 있습니다."})
+            
+        # 뺏긴 지 20년이 안 지났는지 확인
+        if getattr(target_tile, 'lost_by_id', None) == player.id and getattr(target_tile, 'lockout_until', 0) > state.year:
+            db.close()
+            return jsonify({"status": f"fail: 전쟁에서 잃은 영토는 20년 동안 점령할 수 없습니다. ({target_tile.lockout_until}년 이후 가능)"})
+            
         target_tile.owner_id = player.id
-        player.last_conquer_year = state.year
         db.commit()
         db.close()
         return jsonify({"status": "success", "msg": "영토 점령이 즉시 완료되었습니다!"})
+        
     elif target_tile.owner_id != player.id:
-        # Enemy tile -> Combat Task
+        # 전쟁 시작
+        if state.year - player.last_conquer_year < 5:
+            db.close()
+            return jsonify({"status": f"fail: 전쟁은 5년에 한 번만 할 수 있습니다! (최근 전쟁: {player.last_conquer_year}년)"})
+            
         p_city = db.query(City).filter_by(nation_id=player.id).first()
         if (p_city.soldiers or 0) < 10:
             db.close()
             return jsonify({"status": "fail: 병력이 부족하여 전쟁을 선포할 수 없습니다 (최소 10명 필요)"})
             
         p_city.soldiers = (p_city.soldiers or 0) - 10 # Send soldiers to front (they act as assigned labor for war)
+        
+        task_type = 'conquer_far' if not adjacent else 'conquer'
         from modules.database import Task
-        new_task = Task(nation_id=player.id, city_id=p_city.id, task_type='conquer', target_x=cx, target_z=cz, labor_assigned=10, time_remaining=3)
+        new_task = Task(nation_id=player.id, city_id=p_city.id, task_type=task_type, target_x=cx, target_z=cz, labor_assigned=10, time_remaining=3)
         player.last_conquer_year = state.year
         db.add(new_task)
         db.commit()
         db.close()
-        return jsonify({"status": "success", "msg": "전쟁 선포! 전투 시작 (남은 턴: 3)"})
+        msg = "원거리 공격! 성공 시 해당 땅이 빈 땅으로 변합니다. (남은 턴: 3)" if not adjacent else "전쟁 선포! 전투 시작 (남은 턴: 3)"
+        return jsonify({"status": "success", "msg": msg})
             
     db.close()
     return jsonify({"status": "fail: 이미 내 영토입니다."})

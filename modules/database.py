@@ -46,7 +46,7 @@ class Nation(Base):
     
     user = relationship("User", back_populates="nation")
     cities = relationship("City", back_populates="nation")
-    tiles = relationship("Tile", back_populates="owner")
+    tiles = relationship("Tile", back_populates="owner", foreign_keys='Tile.owner_id')
     units = relationship("Unit", back_populates="nation")
 
 class City(Base):
@@ -173,7 +173,12 @@ class Tile(Base):
     resource_amount = Column(Float, default=0.0)
     
     owner_id = Column(Integer, ForeignKey('nations.id'), nullable=True)
-    owner = relationship("Nation", back_populates="tiles")
+    owner = relationship("Nation", back_populates="tiles", foreign_keys=[owner_id])
+    
+    # War penalty mechanics
+    lost_by_id = Column(Integer, ForeignKey('nations.id'), nullable=True)
+    lockout_until = Column(Integer, default=0)
+    lost_by = relationship("Nation", foreign_keys=[lost_by_id])
 
 # Setup Database
 db_url = os.environ.get('DATABASE_URL')

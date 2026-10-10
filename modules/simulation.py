@@ -453,7 +453,7 @@ def run_simulation_step(db: Session):
                 t = db.query(Tile).filter_by(x=task.target_x, z=task.target_z).first()
                 if t and t.owner_id is None:
                     t.owner_id = task.nation_id
-            elif task.task_type == 'conquer':
+            elif task.task_type in ['conquer', 'conquer_far']:
                 t = db.query(Tile).filter_by(x=task.target_x, z=task.target_z).first()
                 if t and t.owner_id != task.nation_id:
                     # Combat resolution
@@ -463,7 +463,15 @@ def run_simulation_step(db: Session):
                             for dz in range(-1, 2):
                                 adj_t = db.query(Tile).filter_by(x=task.target_x+dx, z=task.target_z+dz).first()
                                 if adj_t and adj_t.owner_id == t.owner_id:
-                                    adj_t.owner_id = task.nation_id
+                                    if task.task_type == 'conquer_far':
+                                        # 원거리 전쟁: 해당 타일이 빈 땅이 되고, 20년간 탈환 불가
+                                        state = db.query(GameState).first()
+                                        adj_t.lost_by_id = adj_t.owner_id
+                                        adj_t.lockout_until = (state.year if state else 0) + 20
+                                        adj_t.owner_id = None
+                                    else:
+                                        adj_t.owner_id = task.nation_id
+                                        
                                     # Destroy enemy city on this tile
                                     enemy_c = db.query(City).filter_by(x=adj_t.x, z=adj_t.z).first()
                                     if enemy_c and enemy_c.nation_id != task.nation_id:
@@ -498,7 +506,10 @@ def run_simulation_step(db: Session):
                     Tile.z.between(base_t.z-1, base_t.z+1)
                 ).first()
                 if adj:
-                    adj.owner_id = nation.id
+                    state = db.query(GameState).first()
+                    # 20년 페널티 체크 (AI도 예외 없음)
+                    if not (adj.lost_by_id == nation.id and adj.lockout_until > state.year):
+                        adj.owner_id = nation.id
                     
             # AI logic to build buildings (NEW)
             my_cities = [c for c in cities if c.nation_id == nation.id]
