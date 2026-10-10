@@ -53,9 +53,57 @@
                 <button class="menu-btn" data-target="tab-resource">자원</button>
                 <button class="menu-btn" data-target="tab-tech">기술</button>
                 <button class="menu-btn" data-target="tab-diplomacy">외교</button>
+                <button class="menu-btn" data-target="tab-craft" style="background:#fbbf24; color:#000;">제작(가공)</button>
             </div>
             
             <div id="menu-content">
+                <!-- 제작 탭 -->
+                <div id="tab-craft" class="tab-pane hidden">
+                    <h3 style="color:#fbbf24; border-bottom:1px solid #fbbf24; padding-bottom:5px; margin-bottom:10px;">수동 가공소</h3>
+                    <p style="font-size:0.85em; color:#9ca3af; margin-bottom:15px;">원자재를 소비하여 가공 자원을 생산합니다.</p>
+                    
+                    <div style="display:flex; gap:10px; margin-bottom:15px;">
+                        <input type="number" id="craft-amount" value="1" min="1" max="1000" style="width:60px; background:#1f2937; color:white; border:1px solid #374151; padding:5px; border-radius:4px;">
+                        <span style="align-self:center;">번 제작하기</span>
+                    </div>
+
+                    <div style="max-height:600px; overflow-y:auto; padding-right:10px;">
+                        <h4 style="color:#22c55e;">[식품]</h4>
+                        <div class="build-option"><span>🧀 치즈 (우유2)</span><button class="craft-btn" data-item="food_cheese">제작</button></div>
+                        <div class="build-option"><span>🍞 빵 (밀2, 물1)</span><button class="craft-btn" data-item="food_bread">제작</button></div>
+                        <div class="build-option"><span>🌭 소시지(2개) (돼지고기2, 미네랄1)</span><button class="craft-btn" data-item="food_sausage">제작</button></div>
+                        <div class="build-option"><span>🍷 와인 (과일3)</span><button class="craft-btn" data-item="food_wine">제작</button></div>
+                        <div class="build-option"><span>🥩 스테이크 (소고기2, 미네랄1)</span><button class="craft-btn" data-item="food_steak">제작</button></div>
+                        <div class="build-option"><span>🥫 생선통조림(2개) (물고기2, 철1)</span><button class="craft-btn" data-item="food_canned_fish">제작</button></div>
+                        <div class="build-option"><span>🍲 스튜(2개) + 갈은돌(5개) (감자2, 물1, 소고기1)</span><button class="craft-btn" data-item="food_stew">제작</button></div>
+                        
+                        <h4 style="color:#fbbf24; margin-top:15px;">[기초 자재]</h4>
+                        <div class="build-option"><span>📜 종이(5개) (나무10)</span><button class="craft-btn" data-item="paper">제작</button></div>
+                        <div class="build-option"><span>🧱 벽돌(2개) (갈은돌2, 물1)</span><button class="craft-btn" data-item="brick">제작</button></div>
+                        <div class="build-option"><span>🪙 은(2개) & 구리(2개) (돌5, 미네랄5, 물10)</span><button class="craft-btn" data-item="silver_copper">제작</button></div>
+                        <div class="build-option"><span>🪞 유리(2개) (돌2, 물1, 미네랄1)</span><button class="craft-btn" data-item="glass">제작</button></div>
+                        <div class="build-option"><span>💥 화약(2개) (석탄2, 미네랄1)</span><button class="craft-btn" data-item="gunpowder">제작</button></div>
+                        
+                        <h4 style="color:#c084fc; margin-top:15px;">[금속 및 화학]</h4>
+                        <div class="build-option"><span>⚔️ 청동 (철2, 구리2)</span><button class="craft-btn" data-item="bronze">제작</button></div>
+                        <div class="build-option"><span>⚙️ 강철(2개) (철3, 석탄2)</span><button class="craft-btn" data-item="steel">제작</button></div>
+                        <div class="build-option"><span>🛸 합금 (강철2, 청동2, 은1)</span><button class="craft-btn" data-item="alloy">제작</button></div>
+                        <div class="build-option"><span>⛽ 가솔린(2개) (석유3, 물1)</span><button class="craft-btn" data-item="gasoline">제작</button></div>
+                        <div class="build-option"><span>🧪 플라스틱(2개) (물5, 미네랄1)</span><button class="craft-btn" data-item="plastic">제작</button></div>
+                        
+                        <h4 style="color:#f472b6; margin-top:15px;">[첨단 부품]</h4>
+                        <div class="build-option"><span>💡 고급부품 (합금1, 미네랄2, 은1)</span><button class="craft-btn" data-item="advanced_part">제작</button></div>
+                        <div class="build-option"><span>💾 반도체 (구리2, 미네랄2, 물2)</span><button class="craft-btn" data-item="semiconductor">제작</button></div>
+                        <div class="build-option"><span>🧠 AI칩 (반도체2, 은2)</span><button class="craft-btn" data-item="ai_chip">제작</button></div>
+                        <div class="build-option"><span>⚡ 에너지 코어 (합금2, 고급부품1, 플라스틱5)</span><button class="craft-btn" data-item="energy_core">제작</button></div>
+                        <div class="build-option"><span>🛡️ 복합소재(2개) (플라스틱2, 티타늄2, 강철2)</span><button class="craft-btn" data-item="composite">제작</button></div>
+                        
+                        <h4 style="color:#38bdf8; margin-top:15px;">[특수 및 우주]</h4>
+                        <div class="build-option"><span>☣️ 농축우라늄 (우라늄5, 물2, 미네랄2)</span><button class="craft-btn" data-item="enriched_uranium">제작</button></div>
+                        <div class="build-option"><span>🌀 워프 드라이브 (에너지코어2, 암흑물질5, AI칩2)</span><button class="craft-btn" data-item="warp_drive">제작</button></div>
+                    </div>
+                </div>
+
                 <!-- 자원 탭 -->
                 <div id="tab-resource" class="tab-pane hidden">
                     <h3 style="color:#22c55e; border-bottom:1px solid #22c55e; padding-bottom:5px; margin-bottom:10px;">식량 (포만감/영양소)</h3>

@@ -811,6 +811,36 @@ function setupTabs() {
             });
         });
     });
+
+    // Craft buttons logic
+    const craftBtns = document.querySelectorAll('.craft-btn');
+    craftBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const itemId = e.target.getAttribute('data-item');
+            const amountInput = document.getElementById('craft-amount');
+            const amount = parseInt(amountInput.value) || 1;
+            
+            if(amount <= 0) {
+                showSplash("제작 실패", "올바른 수량을 입력하세요.");
+                return;
+            }
+            
+            fetch('/api/craft', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ item_id: itemId, amount: amount })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    showSplash("제작 완료!", data.msg);
+                    fetchPlayerData(); // Refresh resources immediately
+                } else {
+                    showSplash("제작 실패", data.status.replace('fail: ', ''));
+                }
+            });
+        });
+    });
 }
 
 // ==========================================

@@ -763,6 +763,83 @@ def research_tech():
         db.close()
         return jsonify({"status": "fail: not enough resources"})
 
+@app.route('/api/craft', methods=['POST'])
+def api_craft():
+    if 'user_id' not in session: return jsonify({"status": "fail: 로그인 필요"})
+    data = request.json
+    item_id = data.get('item_id')
+    amount = int(data.get('amount', 1))
+    
+    if amount <= 0: return jsonify({"status": "fail: 유효하지 않은 수량"})
+    
+    db = SessionLocal()
+    player = db.query(Nation).filter_by(user_id=session['user_id']).first()
+    if not player:
+        db.close()
+        return jsonify({"status": "fail: 플레이어 국가를 찾을 수 없음"})
+        
+    p_city = db.query(City).filter_by(nation_id=player.id).first()
+    if not p_city:
+        db.close()
+        return jsonify({"status": "fail: 수도가 없습니다."})
+        
+    recipes = {
+        'paper': {'inputs': {'wood': 10}, 'outputs': {'paper': 5}},
+        'food_cheese': {'inputs': {'food_milk': 2}, 'outputs': {'food_cheese': 1}},
+        'food_bread': {'inputs': {'food_wheat': 2, 'water': 1}, 'outputs': {'food_bread': 1}},
+        'food_sausage': {'inputs': {'food_pork': 2, 'mineral': 1}, 'outputs': {'food_sausage': 2}},
+        'food_wine': {'inputs': {'food_fruit': 3}, 'outputs': {'food_wine': 1}},
+        'food_steak': {'inputs': {'food_beef': 2, 'mineral': 1}, 'outputs': {'food_steak': 1}},
+        'food_canned_fish': {'inputs': {'food_fish': 2, 'iron': 1}, 'outputs': {'food_canned_fish': 2}},
+        'food_stew': {'inputs': {'food_potato': 2, 'water': 1, 'food_beef': 1}, 'outputs': {'food_stew': 2, 'cut_stone': 5}},
+        'silver_copper': {'inputs': {'stone': 5, 'mineral': 5, 'water': 10}, 'outputs': {'silver': 2, 'copper': 2}},
+        'brick': {'inputs': {'cut_stone': 2, 'water': 1}, 'outputs': {'brick': 2}},
+        'bronze': {'inputs': {'iron': 2, 'copper': 2}, 'outputs': {'bronze': 1}},
+        'gunpowder': {'inputs': {'coal': 2, 'mineral': 1}, 'outputs': {'gunpowder': 2}},
+        'glass': {'inputs': {'stone': 2, 'water': 1, 'mineral': 1}, 'outputs': {'glass': 2}},
+        'gasoline': {'inputs': {'oil': 3, 'water': 1}, 'outputs': {'gasoline': 2}},
+        'enriched_uranium': {'inputs': {'uranium': 5, 'water': 2, 'mineral': 2}, 'outputs': {'enriched_uranium': 1}},
+        'steel': {'inputs': {'iron': 3, 'coal': 2}, 'outputs': {'steel': 2}},
+        'alloy': {'inputs': {'steel': 2, 'bronze': 2, 'silver': 1}, 'outputs': {'alloy': 1}},
+        'advanced_part': {'inputs': {'alloy': 1, 'mineral': 2, 'silver': 1}, 'outputs': {'advanced_part': 1}},
+        'plastic': {'inputs': {'water': 5, 'mineral': 1}, 'outputs': {'plastic': 2}},
+        'semiconductor': {'inputs': {'copper': 2, 'mineral': 2, 'water': 2}, 'outputs': {'semiconductor': 1}},
+        'ai_chip': {'inputs': {'semiconductor': 2, 'silver': 2}, 'outputs': {'ai_chip': 1}},
+        'energy_core': {'inputs': {'alloy': 2, 'advanced_part': 1, 'plastic': 5}, 'outputs': {'energy_core': 1}},
+        'composite': {'inputs': {'plastic': 2, 'titanium': 2, 'steel': 2}, 'outputs': {'composite': 2}},
+        'warp_drive': {'inputs': {'energy_core': 2, 'dark_matter': 5, 'ai_chip': 2}, 'outputs': {'warp_drive': 1}}
+    }
+    
+    if item_id not in recipes:
+        db.close()
+        return jsonify({"status": "fail: 존재하지 않는 레시피"})
+        
+    recipe = recipes[item_id]
+    
+    # Check if has enough
+    missing = []
+    for k, v in recipe['inputs'].items():
+        req = v * amount
+        has = getattr(p_city, k, 0) or 0
+        if has < req:
+            missing.append(f"{k} (필요: {req}, 보유: {has})")
+            
+    if missing:
+        db.close()
+        return jsonify({"status": f"fail: 자원 부족 - {', '.join(missing)}"})
+        
+    # Deduct inputs
+    for k, v in recipe['inputs'].items():
+        setattr(p_city, k, getattr(p_city, k, 0) - (v * amount))
+        
+    # Add outputs
+    for k, v in recipe['outputs'].items():
+        setattr(p_city, k, getattr(p_city, k, 0) + (v * amount))
+        
+    db.commit()
+    db.close()
+    return jsonify({"status": "success", "msg": f"{amount}번 제작 완료!"})
+
 # Start simulation loop in the background
 background_thread = None
 thread_lock = threading.Lock()
