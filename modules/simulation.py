@@ -202,21 +202,21 @@ def run_simulation_step(db: Session):
             city.working_population = city.population # Cap it if starved
             
         # Base production (wild gathering)
-        city.food_fruit += 40 * food_bonus * weather_food_mod
+        city.food_fruit += 5 * food_bonus * weather_food_mod
         
         # Building Production
         for b in city.buildings:
-            if b.b_type == '밀 농장': city.food_wheat += 50 * food_bonus * weather_food_mod
-            elif b.b_type == '쌀 농장': city.food_rice += 40 * food_bonus * weather_food_mod
-            elif b.b_type == '옥수수 농장': city.food_corn += 60 * food_bonus * weather_food_mod
-            elif b.b_type == '감자 농장': city.food_potato += 70 * food_bonus * weather_food_mod
-            elif b.b_type == '과수원': city.food_fruit += 60 * food_bonus * weather_food_mod
+            if b.b_type == '밀 농장': city.food_wheat += 15 * food_bonus * weather_food_mod
+            elif b.b_type == '쌀 농장': city.food_rice += 15 * food_bonus * weather_food_mod
+            elif b.b_type == '옥수수 농장': city.food_corn += 18 * food_bonus * weather_food_mod
+            elif b.b_type == '감자 농장': city.food_potato += 20 * food_bonus * weather_food_mod
+            elif b.b_type == '과수원': city.food_fruit += 18 * food_bonus * weather_food_mod
             elif b.b_type == '소 목장': 
-                city.food_beef += 30 * food_bonus * weather_food_mod
-                city.food_milk += 20 * food_bonus * weather_food_mod
-            elif b.b_type == '돼지 농장': city.food_pork += 35 * food_bonus * weather_food_mod
-            elif b.b_type == '양계장': city.food_chicken += 40 * food_bonus * weather_food_mod
-            elif b.b_type == '어장': city.food_fish += 50 * food_bonus * weather_food_mod
+                city.food_beef += 10 * food_bonus * weather_food_mod
+                city.food_milk += 5 * food_bonus * weather_food_mod
+            elif b.b_type == '돼지 농장': city.food_pork += 12 * food_bonus * weather_food_mod
+            elif b.b_type == '양계장': city.food_chicken += 12 * food_bonus * weather_food_mod
+            elif b.b_type == '어장': city.food_fish += 15 * food_bonus * weather_food_mod
             elif '벌목장' in b.b_type:
                 tier = int(b.b_type.split('티어')[0][-1]) if '티어' in b.b_type else 1
                 city.wood += (10 * tier) * prod_bonus
@@ -310,20 +310,17 @@ def run_simulation_step(db: Session):
                 t = db.query(Tile).filter_by(x=task.target_x, z=task.target_z).first()
                 if t and t.owner_id != task.nation_id:
                     # Combat resolution
-                    if random.random() < 0.5:
+                    if True: # 100% success for now
                         # Win
                         for dx in range(-1, 2):
                             for dz in range(-1, 2):
                                 adj_t = db.query(Tile).filter_by(x=task.target_x+dx, z=task.target_z+dz).first()
                                 if adj_t and adj_t.owner_id == t.owner_id:
-                                    if task.task_type == 'conquer_far':
-                                        # 원거리 전쟁: 해당 타일이 빈 땅이 되고, 20년간 탈환 불가
-                                        state = db.query(GameState).first()
-                                        adj_t.lost_by_id = adj_t.owner_id
-                                        adj_t.lockout_until = (state.year if state else 0) + 20
-                                        adj_t.owner_id = None
-                                    else:
-                                        adj_t.owner_id = task.nation_id
+                                    # 공격 성공 시 어떤 타일이든 빈 땅으로 만들고 20년 제한을 건다.
+                                    state = db.query(GameState).first()
+                                    adj_t.lost_by_id = adj_t.owner_id
+                                    adj_t.lockout_until = (state.year if state else 0) + 20
+                                    adj_t.owner_id = None
                                         
                                     # Destroy enemy city on this tile
                                     enemy_c = db.query(City).filter_by(x=adj_t.x, z=adj_t.z).first()
@@ -340,18 +337,35 @@ def run_simulation_step(db: Session):
     # AI Logic
     for nation in nations:
         if not nation.is_player:
+            # AI Passive Income (Buff)
+            nation.gold = (nation.gold or 0) + 50
+            nation.iron = (nation.iron or 0) + 20
+            nation.wood = (nation.wood or 0) + 20
+            
+            # Find AI's city
+            ai_cities = db.query(City).filter_by(nation_id=nation.id).all()
+            if ai_cities:
+                main_city = ai_cities[0]
+                main_city.food_wheat = (main_city.food_wheat or 0) + 50
+            
             # AI randomly decides to build cities if rich
             if nation.gold > 500:
                 nation.gold -= 500
                 flat_tiles = db.query(Tile).filter(Tile.terrain_type == "평원", Tile.owner_id == None).all()
                 if flat_tiles:
                     free_tile = random.choice(flat_tiles)
-                    new_city = City(name=f"{nation.name} 확장시", nation_id=nation.id, x=free_tile.x, z=free_tile.z, population=50)
-                    db.add(new_city)
+                    # Check 20-year lockout rule
+                    state = db.query(GameState).first()
+                    if getattr(free_tile, 'lost_by_id', None) == nation.id and getattr(free_tile, 'lockout_until', 0) > (state.year if state else 0):
+                        pass # Cannot expand here
+                    else:
+                        free_tile.owner_id = nation.id
+                        new_city = City(name=f"{nation.name} 확장시", nation_id=nation.id, x=free_tile.x, z=free_tile.z, population=50)
+                        db.add(new_city)
             
             # AI logic to expand borders
             my_tiles = db.query(Tile).filter(Tile.owner_id == nation.id).all()
-            if my_tiles and random.random() < 0.4: # 40% chance to expand (increased)
+            if my_tiles and random.random() < 0.4: # 40% chance to expand
                 base_t = random.choice(my_tiles)
                 adj = db.query(Tile).filter(
                     Tile.owner_id == None,
@@ -360,9 +374,15 @@ def run_simulation_step(db: Session):
                 ).first()
                 if adj:
                     state = db.query(GameState).first()
-                    # 20년 페널티 체크 (AI도 예외 없음)
-                    if not (adj.lost_by_id == nation.id and adj.lockout_until > state.year):
+                    if not (getattr(adj, 'lost_by_id', None) == nation.id and getattr(adj, 'lockout_until', 0) > (state.year if state else 0)):
                         adj.owner_id = nation.id
+            
+            # AI Military
+            if nation.gold > 200 and nation.iron > 100:
+                if ai_cities:
+                    ai_cities[0].soldiers = (ai_cities[0].soldiers or 0) + 10
+                nation.gold -= 100
+                nation.iron -= 50
                     
             # AI logic to build buildings (NEW)
             my_cities = [c for c in cities if c.nation_id == nation.id]
