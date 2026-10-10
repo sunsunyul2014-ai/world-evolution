@@ -442,7 +442,7 @@ function createBuildingMesh(type) {
         const siloCol = type.includes('태크3') ? 0x3b82f6 : (type.includes('태크2') ? 0xf59e0b : 0x9ca3af);
         const siloH = type.includes('태크3') ? s*1.0 : (type.includes('태크2') ? s*0.8 : s*0.6);
         const silo = new THREE.Mesh(new THREE.CylinderGeometry(s*0.15, s*0.15, siloH), new THREE.MeshStandardMaterial({ color: siloCol, metalness: 0.4, roughness: 0.5 }));
-        silo.position.set(s*0.2, siloH/2, s*0.2);
+        silo.position.set(0, siloH/2, 0);
         silo.castShadow = true;
         group.add(silo);
     }
