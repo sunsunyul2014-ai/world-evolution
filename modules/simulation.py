@@ -306,31 +306,7 @@ def run_simulation_step(db: Session):
                 t = db.query(Tile).filter_by(x=task.target_x, z=task.target_z).first()
                 if t and t.owner_id is None:
                     t.owner_id = task.nation_id
-            elif task.task_type in ['conquer', 'conquer_far']:
-                t = db.query(Tile).filter_by(x=task.target_x, z=task.target_z).first()
-                if t and t.owner_id != task.nation_id:
-                    # Combat resolution
-                    if True: # 100% success for now
-                        # Win
-                        for dx in range(-1, 2):
-                            for dz in range(-1, 2):
-                                adj_t = db.query(Tile).filter_by(x=task.target_x+dx, z=task.target_z+dz).first()
-                                if adj_t and adj_t.owner_id == t.owner_id:
-                                    # 공격 성공 시 어떤 타일이든 빈 땅으로 만들고 20년 제한을 건다.
-                                    state = db.query(GameState).first()
-                                    adj_t.lost_by_id = adj_t.owner_id
-                                    adj_t.lockout_until = (state.year if state else 0) + 20
-                                    adj_t.owner_id = None
-                                        
-                                    # Destroy enemy city on this tile
-                                    enemy_c = db.query(City).filter_by(x=adj_t.x, z=adj_t.z).first()
-                                    if enemy_c and enemy_c.nation_id != task.nation_id:
-                                        db.delete(enemy_c)
-                        # Return surviving troops
-                        if p_city: p_city.soldiers = (p_city.soldiers or 0) + max(0, task.labor_assigned - random.randint(1, 5))
-                    else:
-                        # Lose troops
-                        if p_city: p_city.population = max(0, p_city.population - random.randint(3, 8))
+
             
             db.delete(task)
 
@@ -446,17 +422,36 @@ def run_simulation_step(db: Session):
                 u.x += (dx/dist) * 0.5
                 u.z += (dz/dist) * 0.5
             else:
-                # Reached target, pick new target (20% chance to attack enemy city)
-                if random.random() < 0.2:
-                    enemy_cities = db.query(City).filter(City.nation_id != u.nation_id).all()
-                    if enemy_cities:
-                        target_c = random.choice(enemy_cities)
-                        u.target_x, u.target_z = target_c.x, target_c.z
+                if u.u_type == '침공군':
+                    # Reached target! Destroy tile!
+                    t = db.query(Tile).filter_by(x=round(u.target_x), z=round(u.target_z)).first()
+                    if t and t.owner_id is not None and t.owner_id != u.nation_id:
+                        state = db.query(GameState).first()
+                        t.lost_by_id = t.owner_id
+                        t.lockout_until = (state.year if state else 0) + 20
+                        t.owner_id = None
+                        world_changed = True
+                        
+                        enemy_c = db.query(City).filter_by(x=t.x, z=t.z).first()
+                        if enemy_c and enemy_c.nation_id != u.nation_id:
+                            db.delete(enemy_c)
+                    u.health = 0 # Delete unit after impact
+                    continue
+                elif u.u_type == '방어군':
+                    # Disappear if no enemies nearby
+                    if random.random() < 0.1: u.health -= 20
                 else:
-                    state = db.query(GameState).first()
-                    map_size = state.map_size if state else 50
-                    u.target_x = max(0, min(map_size-1, u.x + random.randint(-10, 10)))
-                    u.target_z = max(0, min(map_size-1, u.z + random.randint(-10, 10)))
+                    # Reached target, pick new target (20% chance to attack enemy city)
+                    if random.random() < 0.2:
+                        enemy_cities = db.query(City).filter(City.nation_id != u.nation_id).all()
+                        if enemy_cities:
+                            target_c = random.choice(enemy_cities)
+                            u.target_x, u.target_z = target_c.x, target_c.z
+                    else:
+                        state = db.query(GameState).first()
+                        map_size = state.map_size if state else 50
+                        u.target_x = max(0, min(map_size-1, u.x + random.randint(-10, 10)))
+                        u.target_z = max(0, min(map_size-1, u.z + random.randint(-10, 10)))
                 
             # Constrain unit position strictly within bounds
             state = db.query(GameState).first()

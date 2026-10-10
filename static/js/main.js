@@ -69,17 +69,44 @@ function initSocket() {
             // Update or add units
             data.units.forEach(u => {
                 if(!unitMeshes[u.id]) {
-                    const geo = new THREE.SphereGeometry(TILE_SIZE * 0.3, 16, 16);
+                    let geo = new THREE.SphereGeometry(TILE_SIZE * 0.3, 16, 16);
+                    let yPos = 1.5;
+                    
+                    if (u.type === '침공군' || u.type === '방어군' || u.type === '보병' || u.type === '원시전사' || u.type === '소총수') {
+                        geo = new THREE.BoxGeometry(TILE_SIZE * 0.3, TILE_SIZE * 0.6, TILE_SIZE * 0.3);
+                        yPos = 1.2;
+                    } else if (u.type && (u.type.includes('탱크') || u.type.includes('전차'))) {
+                        geo = new THREE.BoxGeometry(TILE_SIZE * 0.6, TILE_SIZE * 0.3, TILE_SIZE * 0.5);
+                        yPos = 1.0;
+                    } else if (u.type && (u.type.includes('비행') || u.type.includes('헬기'))) {
+                        geo = new THREE.ConeGeometry(TILE_SIZE * 0.3, TILE_SIZE * 0.6, 4);
+                        yPos = 3.0;
+                    } else if (u.type === '기사') {
+                        geo = new THREE.CylinderGeometry(TILE_SIZE*0.2, TILE_SIZE*0.3, TILE_SIZE*0.5, 8);
+                    }
+                    
                     const mat = new THREE.MeshLambertMaterial({ color: u.color });
                     const mesh = new THREE.Mesh(geo, mat);
-                    mesh.position.set(u.x * TILE_SIZE, 1.5, u.z * TILE_SIZE);
+                    
+                    // Add a small label if it's an invading army
+                    if (u.type === '침공군') {
+                        const markerGeo = new THREE.ConeGeometry(0.2, 0.5, 4);
+                        const markerMat = new THREE.MeshBasicMaterial({color: 0xff0000});
+                        const marker = new THREE.Mesh(markerGeo, markerMat);
+                        marker.rotation.x = Math.PI;
+                        marker.position.y = 1.0;
+                        mesh.add(marker);
+                    }
+                    
+                    mesh.position.set(u.x * TILE_SIZE, yPos, u.z * TILE_SIZE);
                     mesh.castShadow = true;
                     scene.add(mesh);
                     unitMeshes[u.id] = mesh;
                 } else {
                     // Smoothly animate to new position
+                    let yPos = unitMeshes[u.id].position.y; // keep original height
                     new TWEEN.Tween(unitMeshes[u.id].position)
-                        .to({ x: u.x * TILE_SIZE, z: u.z * TILE_SIZE }, 1800)
+                        .to({ x: u.x * TILE_SIZE, y: yPos, z: u.z * TILE_SIZE }, 1800)
                         .start();
                 }
             });

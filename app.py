@@ -51,7 +51,7 @@ def game_loop():
         unit_data = []
         for u in units:
             unit_data.append({
-                'id': u.id, 'x': u.x, 'z': u.z, 'color': nation_dict.get(u.nation_id, "#ffffff")
+                'id': u.id, 'x': u.x, 'z': u.z, 'color': nation_dict.get(u.nation_id, "#ffffff"), 'type': u.u_type
             })
         update_data['units'] = unit_data
         
@@ -531,14 +531,25 @@ def conquer():
             
         p_city.soldiers = (p_city.soldiers or 0) - 10 # Send soldiers to front (they act as assigned labor for war)
         
-        task_type = 'conquer_far' if not adjacent else 'conquer'
-        from modules.database import Task
-        new_task = Task(nation_id=player.id, city_id=p_city.id, task_type=task_type, target_x=cx, target_z=cz, labor_assigned=10, time_remaining=3)
+        # Instead of abstract task, spawn physical units!
         player.last_conquer_year = state.year
-        db.add(new_task)
+        
+        for _ in range(5):
+            u = Unit(nation_id=player.id, u_type='침공군', x=p_city.x, z=p_city.z, target_x=cx, target_z=cz, health=100)
+            db.add(u)
+            
+        # Add some defenders for the enemy if they exist
+        enemy = db.query(Nation).filter_by(id=target_tile.owner_id).first()
+        if enemy:
+            enemy_city = db.query(City).filter_by(nation_id=enemy.id).first()
+            if enemy_city:
+                for _ in range(3):
+                    eu = Unit(nation_id=enemy.id, u_type='방어군', x=enemy_city.x, z=enemy_city.z, target_x=cx, target_z=cz, health=100)
+                    db.add(eu)
+                    
         db.commit()
         db.close()
-        msg = "원거리 공격! 성공 시 해당 땅이 빈 땅으로 변합니다. (남은 턴: 3)" if not adjacent else "전쟁 선포! 전투 시작 (남은 턴: 3)"
+        msg = "침공군 파병 완료! 군대가 목표를 향해 진군합니다. 적진에 도달하면 파괴합니다."
         return jsonify({"status": "success", "msg": msg})
             
     db.close()
